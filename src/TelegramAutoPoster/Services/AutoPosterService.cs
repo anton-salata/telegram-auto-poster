@@ -61,10 +61,10 @@ namespace TelegramAutoPoster.Services
 				{
 					var items = await scraper.ScrapeAsync(feed.FeedUrl, cancellationToken);
 
-					if (_feedSettings.StartDateTime is DateTime startDate)
-					{
-						items = items.Where(i => i.PublishDate > startDate).ToList();
-					}
+					//if (_feedSettings.StartDateTime is DateTime startDate)
+					//{
+					//	items = items.Where(i => i.PublishDate > startDate).ToList();
+					//}
 
 					items = await items
 									.ToAsyncEnumerable()

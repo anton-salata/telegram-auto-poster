@@ -45,7 +45,7 @@ namespace AlienWireBot.Scraper
 						{
 							Url = link,
 							ImageUrl = imageUrl,
-							Message = $"*{WebUtility.HtmlDecode(title)}*\n\n{WebUtility.HtmlDecode(summary)}\n\n[Read more]({link})",
+							FormattedMessage = $"*{WebUtility.HtmlDecode(title)}*\n\n{WebUtility.HtmlDecode(summary)}\n\n[Read more]({link})",
 							PublishDate = publishDate
 						});
 					}

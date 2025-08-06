@@ -1,7 +1,10 @@
 ﻿using HtmlAgilityPack;
+using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using TelegramAutoPoster.Entities;
 using TelegramAutoPoster.Scrapers;
+using TelegramAutoPoster.Scrapers.Entities;
 
 namespace CarNewsBot.Scraper
 {
@@ -82,25 +85,75 @@ namespace CarNewsBot.Scraper
 					}
 				}
 
+				var articleData = await GetArticleData(link);
+
 				items.Add(new ScrapedItem
 				{
 					Url = link,
-					Message = $"*{title}*\n\n[Read more]({link})\n\nBy [{author}]({authorLink})",
+					FormattedMessage = $"*{title}*\n\n[Read more]({link})\n\nBy [{author}]({authorLink})",
+					PlainText = articleData.ArticleText,
 					ImageUrl = image,
-					PublishDate = parsedDate
+					PublishDate = parsedDate,
+					AuthorLink = authorLink,
+					AuthorName = author,
+					Title = title,
+					Format = PostFormat.MultiViaComments,
+					Images = articleData.Images,
+					Videos = articleData.Videos
 				});
 
-				//// Output for test
-				//Console.WriteLine($"Title: {news.Title}");
-				//Console.WriteLine($"Image: {news.Image}");
-				//Console.WriteLine($"Article: {news.Url}");
-				//Console.WriteLine($"Author: {news.Author}");
-				//Console.WriteLine($"Author Link: {news.AuthorLink}");
-				//Console.WriteLine($"Posted Date (UTC): {news.PublishDate}");
-				//Console.WriteLine("------------------------------------------------------");
+				// Output for test
+				Console.WriteLine($"Title: {title}");
+				Console.WriteLine($"Image: {image}");
+				Console.WriteLine($"Link: {link}");
+				Console.WriteLine($"Author: {author}");
+				Console.WriteLine($"Author Link: {authorLink}");
+				Console.WriteLine($"Posted Date: {parsedDate}");
+				Console.WriteLine($"Plain Text: {articleData.ArticleText}");
+				Console.WriteLine($"Images: {string.Join("\n", articleData.Images)}");
+				Console.WriteLine($"Videos: {string.Join("\n", articleData.Videos)}");
 			}
 
 			return items;
+		}
+
+		private async Task<ArticleData> GetArticleData(string link)
+		{
+			var html = await _httpClient.GetStringAsync(link);
+
+			var doc = new HtmlDocument();
+			doc.LoadHtml(html);
+
+			var articleData = new ArticleData();
+
+			// Select all article paragraphs (excluding those with 'skip' class if needed)
+			var articleNodes = doc.DocumentNode.SelectNodes("//p[contains(@class, 'article-paragraph')]");
+
+			// Extract YouTube video URLs from any iframe inside .article-content
+			var videoUrls = doc.DocumentNode.SelectNodes("//*[contains(@class, 'article-content')]//iframe[contains(@src, 'youtube.com/embed')]")?.Select(node => node.GetAttributeValue("src", "")).ToList() ?? new List<string>();
+
+			// Extract image URLs from any img inside .article-content, but skip logos/ads by checking for data attributes or alt text if needed
+			var imageUrls = doc.DocumentNode.SelectNodes("//*[contains(@class, 'article-content')]//img[not(contains(@class, 'logo')) and not(contains(@src, 'sprite'))]")?.Select(node => node.GetAttributeValue("src", "")).ToList() ?? new List<string>();
+
+
+
+			articleData.Images = imageUrls;
+			articleData.Videos = videoUrls;
+
+			if (articleNodes != null && articleNodes.Any())
+			{
+				var textNodes = articleNodes.Skip(3).ToList();
+				textNodes = textNodes.Take(textNodes.Count - 1).ToList();
+
+				// Join all paragraphs with newlines
+				var articleText = string.Join("\n\n", textNodes
+					.Select(node => HtmlEntity.DeEntitize(node.InnerText.Trim()))
+					.Where(text => !string.IsNullOrWhiteSpace(text)));
+
+				articleData.ArticleText = articleText;
+			}
+
+			return articleData;
 		}
 	}
 }

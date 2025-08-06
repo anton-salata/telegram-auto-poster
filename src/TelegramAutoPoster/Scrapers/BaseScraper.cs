@@ -9,7 +9,7 @@ namespace TelegramAutoPoster.Scrapers
 
 		public BaseScraper(IHttpClientFactory httpClientFactory)
 		{
-			_httpClient = httpClientFactory.CreateClient("WithProxy"); //.CreateClient(); //.CreateClient("WithProxy");
+			_httpClient = httpClientFactory.CreateClient(); //.CreateClient(); //.CreateClient("WithProxy");
 		}
 
 		public abstract string Id { get; }

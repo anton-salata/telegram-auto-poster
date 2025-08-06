@@ -7,8 +7,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using TelegramAutoPoster.Clients;
+using TelegramAutoPoster.Clients.Configuration;
 using TelegramAutoPoster.Clients.Interfaces;
 using TelegramAutoPoster.Configuration;
+using TelegramAutoPoster.Scrapers;
 using TelegramAutoPoster.Scrapers.Interfaces;
 using TelegramAutoPoster.Services;
 using TelegramAutoPoster.Storage;
@@ -31,34 +33,36 @@ namespace TelegramAutoPoster
 
 					services.Configure<TgBotConfig>(config);
 					services.Configure<FeedsSettings>(config);
+					services.Configure<OpenRouterConfig>(config);
 					// Or register as singletons (optional if not using IOptions pattern)
 					//services.AddSingleton(config.Get<TgBotSettings>());
 					//services.AddSingleton(config.Get<StorageSettings>());
 					//services.AddSingleton(config.GetSection("Feeds").Get<FeedsSettings>());
 
 
-					//services.AddHttpClient();
+					services.AddHttpClient();
 					// Register a named HttpClient with proxy
-					services.AddHttpClient("WithProxy")
-								.ConfigurePrimaryHttpMessageHandler(() =>
-								{
-									var proxy = new WebProxy("{proxy}")
-									{
-										UseDefaultCredentials = true
-									};
+					//services.AddHttpClient("WithProxy")
+					//			.ConfigurePrimaryHttpMessageHandler(() =>
+					//			{
+					//				var proxy = new WebProxy("")
+					//				{
+					//					UseDefaultCredentials = true
+					//				};
 
-									return new HttpClientHandler
-									{
-										Proxy = proxy,
-										UseProxy = true,
-										UseDefaultCredentials = true
-									};
-								});
+					//				return new HttpClientHandler
+					//				{
+					//					Proxy = proxy,
+					//					UseProxy = true,
+					//					UseDefaultCredentials = true
+					//				};
+					//			});
 
 					// Register Scrapers
 					services.AddSingleton<IScraper, AlienWireScraper>();
 					services.AddSingleton<IScraper, BmwNewsScraper>();
 					services.AddSingleton<IScraper, CarNewsScraper>();
+					services.AddSingleton<IScraper, TechCrunchScraper>();
 
 					// Register Storage
 					services.AddSingleton<IProcessedItemStore, ProcessedItemStore>();
